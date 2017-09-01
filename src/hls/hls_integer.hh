@@ -1,20 +1,42 @@
-// hls_integer.hh                                                     -*-C++-*-
-#pragma once
+/**
+ * @file hls_integer.hh
+ * @brief Provides integer types with explicit sizes
+ */
 
+#pragma once
 #include <cstdint>
 
 namespace Halcyon {
 namespace hls {
 
-                                // ============
-                                // type Integer
-                                // ============
+/**
+ * @class Integer8
+ * @brief 8-bit signed integer
+ */
+using Integer8 = std::int8_t;
 
-using Integer8  = std::int8_t;
+/**
+ * @class Integer16
+ * @brief 16-bit signed integer
+ */
 using Integer16 = std::int16_t;
-using Integer32 = std::int32_t;
-using Integer64 = std::int64_t;
-using Integer   = std::int64_t;
 
-} // close package namespace
-} // close compiler namespace
+/**
+ * @class Integer32
+ * @brief 32-bit signed integer
+ */
+using Integer32 = std::int32_t;
+
+/**
+ * @class Integer64
+ * @brief 64-bit signed integer
+ */
+using Integer64 = std::int64_t;
+
+/**
+ * @class Integer
+ * @brief 64-bit signed integer
+ */
+using Integer = std::int64_t;
+}
+}

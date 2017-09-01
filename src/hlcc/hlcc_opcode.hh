@@ -6,11 +6,12 @@
 namespace Halcyon {
 namespace hls {
 
-                                 // ===========
-                                 // enum Opcode
-                                 // ===========
+// ===========
+// enum Opcode
+// ===========
 
-enum class Opcode : hls::Integer {
+enum class Opcode : hls::Integer
+{
 
     // ENUMERATORS
     e_NO_OPERATION      = 0x0000,

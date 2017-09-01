@@ -22,6 +22,7 @@ SOURCE_DIR = src
 
 BUILD_DIR   = build
 BINARY_DIR  = $(BUILD_DIR)/bin
+DOCS_DIR    = $(BUILD_DIR)/doc
 HEADER_DIR  = $(BUILD_DIR)/include
 LIBRARY_DIR = $(BUILD_DIR)/lib
 OBJECT_DIR  = $(BUILD_DIR)/obj
@@ -48,6 +49,14 @@ $(eval $(call HLM_ADD_CPP_LIBRARY,hlcc,            \
                                   hlcc_instruction \
                                   hlcc_opcode     ))
 
+# Documentation - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.PHONY: docs
+docs: $(hlcc_SOURCE_HEADERS) \
+      $(hls_SOURCE_HEADERS)
+	@echo "Creating documentation"
+	@mkdir -p $(DOCS_DIR)
+	@doxygen >/dev/null
+
 # Project - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .DEFAULT_GOAL := all
 .PHONY: all
@@ -60,7 +69,8 @@ archives: hlcc-archive \
 
 .PHONY: clean
 clean:
-	if [ -d "$(BUILD_DIR)" ] ; then rm -rf $(BUILD_DIR) ; fi
+	@echo "Removing build directory"
+	@if [ -d "$(BUILD_DIR)" ] ; then rm -rf $(BUILD_DIR) ; fi
 
 .PHONY: format
 format: format-hlcc \
