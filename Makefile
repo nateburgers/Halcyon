@@ -9,11 +9,9 @@ include make/hlm_add_cpp_library.mk
 # =============================================================================
 #                            CONFIGURATION OPTIONS
 # =============================================================================
-.DEFAULT_GOAL := all
 
-CPP_COMPILER       = g++
-CPP_COMPILER_FLAGS = -std=c++17 -pedantic -Wall -Werror -Wextra \
-                     -Isrc
+CPP_COMPILER       = g++-7
+CPP_COMPILER_FLAGS = -std=c++17 -pedantic -Wall -Werror -Wextra
 
 LINKER       = gcc
 LINKER_FLAGS =
@@ -34,16 +32,25 @@ OBJECT_DIR  = $(BUILD_DIR)/obj
 
 # Packages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+# TODO(nate): Refactory the library makefile targets so that different
+#             attributes (headers, objects, archives) are built with
+#             different targets (eg. hls-headers, hls-objects, etc...)
+
 # 'hls' package
-$(eval $(call HLM_ADD_CPP_LIBRARY,hls,,\
-	                              hls_integer))
+# Note that 'hls', being the lowest level library, has no dependencies.
+$(eval $(call HLM_ADD_CPP_LIBRARY,hls,,         \
+                                  hls_allocator \
+                                  hls_integer   \
+                                  hls_vector   ))
 
 # 'hlcc' package
-$(eval $(call HLM_ADD_CPP_LIBRARY,hlcc,hls,        \
-	                              hlcc_instruction \
-                                  hlcc_opcode))
+$(eval $(call HLM_ADD_CPP_LIBRARY,hlcc,            \
+                                  hls,             \
+                                  hlcc_instruction \
+                                  hlcc_opcode     ))
 
 # Programs  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.DEFAULT_GOAL := all
 .PHONY : all
 all : hlcc hls
 
