@@ -29,8 +29,8 @@ $(1)-header: $$($(1)_HEADER)
 $(1)-object: $$($(1)_OBJECT)
 
 .PHONY: format-$(1)
-format-$(1): format-$(h)-header \
-             format-$(h)-source
+format-$(1): format-$(1)-header \
+             format-$(1)-source
 
 .PHONY: format-$(1)-header
 format-$(1)-header: $$($(1)_HH)

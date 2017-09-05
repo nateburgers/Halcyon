@@ -40,8 +40,13 @@ OBJECT_DIR  = $(BUILD_DIR)/obj
 # 'hls' package
 $(eval $(call HLM_ADD_DEPENDENCY_FREE_CPP_LIBRARY,hls,          \
                                                   hls_allocator \
+												  hls_boolean   \
+												  hls_false     \
                                                   hls_integer   \
-                                                  hls_vector   ))
+												  hls_true      \
+												  hls_typeutil  \
+                                                  hls_union     \
+												  hls_variant  ))
 
 # 'hlcc' package
 $(eval $(call HLM_ADD_CPP_LIBRARY,hlcc,            \
