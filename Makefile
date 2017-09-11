@@ -41,8 +41,12 @@ OBJECT_DIR  = $(BUILD_DIR)/obj
 $(eval $(call HLM_ADD_DEPENDENCY_FREE_CPP_LIBRARY,hls,          \
                                                   hls_allocator \
 												  hls_boolean   \
+												  hls_buffer    \
 												  hls_false     \
                                                   hls_integer   \
+												  hls_natural   \
+												  hls_new       \
+												  hls_size      \
 												  hls_true      \
 												  hls_typeutil  \
                                                   hls_union     \
