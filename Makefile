@@ -27,9 +27,88 @@ HEADER_DIR  = $(BUILD_DIR)/include
 LIBRARY_DIR = $(BUILD_DIR)/lib
 OBJECT_DIR  = $(BUILD_DIR)/obj
 
+OCAML_INCLUDE_DIR = $(BUILD_DIR)/ocaml_include
+OCAML_OBJECT_DIR  = $(BUILD_DIR)/ocaml_obj
+OCAML_LIBRARY_DIR = $(BUILD_DIR)/ocaml_lib
+
 # =============================================================================
 #                                    RULES
 # =============================================================================
+
+define HLM_ADD_OCAML_MODULE
+
+$(2)_ML  := $(SOURCE_DIR)/$(1)/$(2).ml
+$(2)_MLI := $(SOURCE_DIR)/$(1)/$(2).mli
+
+$(2)_INTERFACE := $(OCAML_INCLUDE_DIR)/$(2).cmi
+$(2)_OBJECT    := $(OCAML_OBJECT_DIR)/$(2).cmx
+
+$(2)_DEPENDENCY_INTERFACES := $(foreach MODULE,$(3),$$($(MODULE)_INTERFACE))
+$(2)_DEPENDENCY_OBJECTS    := $(foreach MODULE,$(3),$$($(MODULE)_OBJECT))
+
+.PHONY: $(2)
+$(2): $(2)-interface \
+      $(2)-object
+
+.PHONY: $(2)-interface
+$(2)-interface: $$($(2)_INTERFACE)
+
+.PHONY: $(2)-object
+$(2)-object: $$($(2)_OBJECT)
+
+$$($(2)_INTERFACE): $$($(2)_MLI)                   \
+                    $$($(2)_DEPENDENCY_INTERFACES) \
+					$$($(2)_DEPENDENCY_OBJECTS)
+	@if [ ! -d "$(OCAML_INCLUDE_DIR)" ]; then mkdir -p $(OCAML_INCLUDE_DIR); fi
+	ocamlopt -I $(OCAML_INCLUDE_DIR) \
+	         -c $$($(2)_MLI)         \
+	         -o $$($(2)_INTERFACE)
+
+$$($(2)_OBJECT): $$($(2)_ML)                 \
+                 $$($(2)_MLI)                \
+                 $$($(2)_INTERFACE)          \
+                 $$($(2)_DEPENDENCY_OBJECTS)
+	@if [ ! -d "$(OCAML_OBJECT_DIR)" ]; then mkdir -p $(OCAML_OBJECT_DIR); fi
+	ocamlopt -I $(OCAML_INCLUDE_DIR)        \
+	         -I $(OCAML_OBJECT_DIR)         \
+	         -c $$($(2)_ML)                 \
+	         -o $$($(2)_OBJECT)
+
+endef
+
+define HLM_ADD_OCAML_PACKAGE
+
+
+$(1)_INTERFACES := $(foreach MODULE,$(2),$$($(MODULE)_INTERFACE))
+$(1)_OBJECTS    := $(foreach MODULE,$(2),$$($(MODULE)_OBJECT))
+$(1)_ARCHIVE    := $(OCAML_LIBRARY_DIR)/$(1).cmxa
+
+.PHONY: $(1)
+$(1): $(1)-interfaces \
+      $(1)-objects    \
+      $(1)-archive
+
+.PHONY: $(1)-interfaces
+$(1)-interfaces: $$($(1)_INTERFACES)
+
+.PHONY: $(1)-objects
+$(1)-objects: $$($(1)_OBJECTS)
+
+.PHONY: $(1)-archive
+$(1)-archive: $$($(1)_ARCHIVE)
+
+$$($(1)_ARCHIVE): $$($(1)_OBJECTS)
+	@if [ ! -d "$(OCAML_LIBRARY_DIR)" ]; then mkdir -p $(OCAML_LIBRARY_DIR); fi
+	ocamlopt -a -o $$($(1)_ARCHIVE) $$($(1)_OBJECTS)
+
+endef
+
+# OCaml Packages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+$(eval $(call HLM_ADD_OCAML_MODULE,mlco,mlco_type,))
+$(eval $(call HLM_ADD_OCAML_MODULE,mlco,mlco_expression,mlco_type))
+
+$(eval $(call HLM_ADD_OCAML_PACKAGE,mlco,mlco_expression \
+										 mlco_type      ))
 
 # Packages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # The following packages shall be listed in dependency order, where packages
