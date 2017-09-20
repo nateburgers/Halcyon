@@ -1,60 +1,74 @@
 (** mlco_expression.ml *)
 
-module Foo = Mlco_type
-
-module rec Expression : sig
+module rec Expression_type : sig
     type t = Variable    of string
            | Integer     of int
-           | Abstraction of Abstraction.t
-           | Application of Application.t
-           | Let         of Let.t
+           | Abstraction of Abstraction_type.t
+           | Application of Application_type.t
+           | Let         of Let_type.t
 end = struct
     type t = Variable    of string
            | Integer     of int
-           | Abstraction of Abstraction.t
-           | Application of Application.t
-           | Let         of Let.t
+           | Abstraction of Abstraction_type.t
+           | Application of Application_type.t
+           | Let         of Let_type.t
 end
 
-and Abstraction : sig
+and Abstraction_type : sig
     type t = {
         parameter : string       ;
-        body      : Expression.t ;
+        body      : Expression_type.t ;
     }
 end = struct
     type t = {
         parameter : string       ;
-        body      : Expression.t ;
+        body      : Expression_type.t ;
     }
 end
 
-and Application : sig
+and Application_type : sig
     type t = {
-        expression : Expression.t ;
-        argument   : Expression.t ;
+        expression : Expression_type.t ;
+        argument   : Expression_type.t ;
     }
 end = struct
     type t = {
-        expression : Expression.t ;
-        argument   : Expression.t ;
+        expression : Expression_type.t ;
+        argument   : Expression_type.t ;
     }
 end
 
-and Let : sig
+and Let_type : sig
     type t = {
         variable     : string ;
-        value        : Expression.t ;
-        continuation : Expression.t ;
+        value        : Expression_type.t ;
+        continuation : Expression_type.t ;
     }
 end = struct
     type t = {
         variable     : string ;
-        value        : Expression.t ;
-        continuation : Expression.t ;
+        value        : Expression_type.t ;
+        continuation : Expression_type.t ;
     }
 end
 
-open Expression
+open Expression_type
+
+module Abstraction = struct
+    include Abstraction_type
+
+    type expression = Expression_type.t
+
+    let make ~parameter ~body = { parameter ; body }
+end
+
+module Application = struct
+    include Application_type
+end
+
+module Let = struct
+    include Let_type
+end
 
 (* ----------------------------------------------------------------------------
  * MIT License

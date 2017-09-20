@@ -1,6 +1,8 @@
 (** 'mlco_type.mli' *)
 
-module rec Type : sig
+module Expression : Mlco_expression.Abstraction
+
+module rec Type_type : sig
     type t = Integer
            | Function of Function_type.t
 end
@@ -12,7 +14,14 @@ and Function_type : sig
     }
 end
 
-open Type
+open Type_type
+
+module Function : sig
+    open Function_type
+    type ty = Type_type.t
+
+    val make : domain:ty -> codomain:ty -> t
+end
 
 (* ----------------------------------------------------------------------------
  * MIT License

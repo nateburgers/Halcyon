@@ -3,39 +3,62 @@
  * type
  *)
 
-module type Foo = Mlco_type
+module rec Expression_type : sig
+    (**
+     * This module provides the type for expressions in the core language.
+     * *)
 
-module rec Expression : sig
     type t = Variable    of string
            | Integer     of int
-           | Abstraction of Abstraction.t
-           | Application of Application.t
-           | Let         of Let.t
+           | Abstraction of Abstraction_type.t
+           | Application of Application_type.t
+           | Let         of Let_type.t
 end
 
-and Abstraction : sig
+and Abstraction_type : sig
+    (**
+     * This module provides the type for lambda expressions in the core
+     * language.
+     *)
+
     type t = {
-        parameter      : string       ;
-        body           : Expression.t ;
+        parameter      : string            ;
+        body           : Expression_type.t ;
     }
 end
 
-and Application : sig
+and Application_type : sig
     type t = {
-        expression : Expression.t ;
-        argument   : Expression.t ;
+        expression : Expression_type.t ;
+        argument   : Expression_type.t ;
     }
 end
 
-and Let : sig
+and Let_type : sig
     type t = {
         variable     : string ;
-        value        : Expression.t ;
-        continuation : Expression.t ;
+        value        : Expression_type.t ;
+        continuation : Expression_type.t ;
     }
 end
 
-open Expression
+open Expression_type
+
+module Abstraction : sig
+    open Abstraction_type
+
+    type expression = Expression_type.t
+
+    val make : parameter:string -> body:expression -> t
+end
+
+module Application : sig
+    open Application_type
+end
+
+module Let : sig
+    open Let_type
+end
 
 (* ----------------------------------------------------------------------------
  * MIT License
