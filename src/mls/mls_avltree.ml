@@ -88,6 +88,14 @@ module Make (Key : Comparable) = struct
         | Empty _ -> 0
         end
 
+    let is_avl tree =
+        let b = balance tree in
+        -1 <= b && b <= 1
+
+    let is_balanced tree = (balance tree) == 0
+    let is_left_heavy tree = (balance tree) < 0
+    let is_right_heavy tree = (balance tree) > 0
+
     let empty () =
         Tree_type.Empty
 
@@ -140,68 +148,6 @@ module Make (Key : Comparable) = struct
         | Branch { right_child } -> right_child
         | Leaf     _             -> Empty
         | Empty                  -> Empty
-        end
-
-    let rec insert tree ~key ~value =
-        let open Tree_type in
-        begin match tree with
-        | Branch { key   = branch_key;
-                   value = branch_value; left_child; right_child } ->
-                if Key.compare key branch_key
-                then begin make_branch
-                         ~key:key
-                         ~value:value
-                         ~left_child:(insert left_child ~key:key ~value:value)
-                         ~right_child:right_child
-                     end
-                else begin make_branch
-                         ~key:key
-                         ~value:value
-                         ~left_child:left_child
-                         ~right_child:(insert right_child ~key:key ~value:value)
-                     end
-        | Leaf { key = leaf_key; value = leaf_value } ->
-                if Key.compare key leaf_key
-                then begin make_branch
-                         ~key:key
-                         ~value:value
-                         ~left_child:(make_leaf ~key:key ~value:value)
-                         ~right_child:(empty ())
-                     end
-                else begin make_branch
-                         ~key:key
-                         ~value:value
-                         ~left_child:(empty ())
-                         ~right_child:(make_leaf ~key:key ~value:value)
-                     end
-        | Empty -> make_leaf ~key:key ~value:value
-        end
-
-    let key_equals lhs rhs =
-        if Key.compare lhs rhs
-        then false
-        else begin if Key.compare rhs lhs
-                   then false
-                   else true
-             end
-
-    let rec lookup tree ~key =
-        let open Tree_type in
-        begin match tree with
-        | Branch {key = branch_key; value; left_child; right_child} ->
-                if Key.compare key branch_key
-                then lookup left_child ~key:key
-                else if Key.compare branch_key key
-                then lookup right_child ~key:key
-                else Optional.make value
-        | Leaf {key = leaf_key; value } ->
-                if Key.compare key leaf_key
-                then Optional.nothing ()
-                else if Key.compare leaf_key key
-                then Optional.nothing ()
-                else Optional.make value
-        | Empty ->
-                Optional.nothing ()
         end
 
     let rotate_left tree =
@@ -313,5 +259,80 @@ module Make (Key : Comparable) = struct
                              end
         | other -> other
         end
+
+    let rec rebalance tree =
+        let open Tree_type in
+        if is_avl tree
+            then tree
+        else if is_left_heavy tree
+            then if is_left_heavy (right_child tree)
+                 then rotate_right_left tree
+                 else rotate_left tree
+            else if is_right_heavy (left_child tree)
+                 then rotate_left_right tree
+                 else rotate_right tree
+
+    let rec insert tree ~key ~value =
+        let open Tree_type in
+        let tree' = begin match tree with
+        | Branch { key   = branch_key;
+                   value = branch_value; left_child; right_child } ->
+                if Key.compare key branch_key
+                then begin make_branch
+                         ~key:key
+                         ~value:value
+                         ~left_child:(insert left_child ~key:key ~value:value)
+                         ~right_child:right_child
+                     end
+                else begin make_branch
+                         ~key:key
+                         ~value:value
+                         ~left_child:left_child
+                         ~right_child:(insert right_child ~key:key ~value:value)
+                     end
+        | Leaf { key = leaf_key; value = leaf_value } ->
+                if Key.compare key leaf_key
+                then begin make_branch
+                         ~key:key
+                         ~value:value
+                         ~left_child:(make_leaf ~key:key ~value:value)
+                         ~right_child:(empty ())
+                     end
+                else begin make_branch
+                         ~key:key
+                         ~value:value
+                         ~left_child:(empty ())
+                         ~right_child:(make_leaf ~key:key ~value:value)
+                     end
+        | Empty -> make_leaf ~key:key ~value:value
+        end in rebalance tree'
+
+    let key_equals lhs rhs =
+        if Key.compare lhs rhs
+        then false
+        else begin if Key.compare rhs lhs
+                   then false
+                   else true
+             end
+
+    let rec lookup tree ~key =
+        let open Tree_type in
+        begin match tree with
+        | Branch {key = branch_key; value; left_child; right_child} ->
+                if Key.compare key branch_key
+                then lookup left_child ~key:key
+                else if Key.compare branch_key key
+                then lookup right_child ~key:key
+                else Optional.make value
+        | Leaf {key = leaf_key; value } ->
+                if Key.compare key leaf_key
+                then Optional.nothing ()
+                else if Key.compare leaf_key key
+                then Optional.nothing ()
+                else Optional.make value
+        | Empty ->
+                Optional.nothing ()
+        end
+
 
 end

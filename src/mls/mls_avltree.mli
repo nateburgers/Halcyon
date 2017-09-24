@@ -73,6 +73,11 @@ module Make (Key : Comparable) : sig
     val balance : 'value t -> int
     val height  : 'value t -> int
 
+    val is_avl         : 'value t -> bool
+    val is_balanced    : 'value t -> bool
+    val is_left_heavy  : 'value t -> bool
+    val is_right_heavy : 'value t -> bool
+
     val key : 'value t -> key Optional.t
     (**
      * Return the key of the top level node in the tree if the tree is
@@ -97,9 +102,7 @@ module Make (Key : Comparable) : sig
      * return an empty tree.
      *)
 
-    (*
     val rebalance : 'value t -> 'value t
-    *)
 
     val insert : 'value t -> key:key -> value:'value -> 'value t
 
