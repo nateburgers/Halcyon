@@ -159,6 +159,7 @@ endef
 #                                         mlco_type      ))
 
 $(eval $(call HLM_OCAML_PACKAGE,mlco))
+$(eval $(call HLM_OCAML_PACKAGE,mls))
 
 # Packages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # The following packages shall be listed in dependency order, where packages
