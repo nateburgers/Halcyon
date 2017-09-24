@@ -103,6 +103,12 @@ module Make (Key : Comparable) : sig
      *)
 
     val rebalance : 'value t -> 'value t
+    (**
+     * Given a tree with children that satisfy the AVL invariant, rebalance
+     * this tree such that it satisfies the avl invariant.  Return the value
+     * unmodified if the value is a leaf or empty.  The behavior is undefined
+     * if the value has subtrees that violate the AVL invariant.
+     *)
 
     val insert : 'value t -> key:key -> value:'value -> 'value t
 
