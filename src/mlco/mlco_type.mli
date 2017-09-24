@@ -1,6 +1,8 @@
 (** 'mlco_type.mli' *)
 
-module Expression : Mlco_expression.Abstraction
+(*
+module Expression : Mlco_expression
+*)
 
 module rec Type_type : sig
     type t = Integer
@@ -9,8 +11,8 @@ end
 
 and Function_type : sig
     type t = {
-        domain   : Type.t ;
-        codomain : Type.t ;
+        domain   : Type_type.t ;
+        codomain : Type_type.t ;
     }
 end
 

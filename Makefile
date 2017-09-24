@@ -23,14 +23,9 @@ SOURCE_DIR = src
 BUILD_DIR   = build
 BINARY_DIR  = $(BUILD_DIR)/programs
 DOCS_DIR    = $(BUILD_DIR)/documentation
-HEADER_DIR  = $(BUILD_DIR)/cpp_headers
-LIBRARY_DIR = $(BUILD_DIR)/cpp_libraries
-OBJECT_DIR  = $(BUILD_DIR)/cpp_compiled_sources
-
-OCAML_HEADER_DIR  = $(BUILD_DIR)/ocaml_interfaces
-OCAML_INCLUDE_DIR = $(BUILD_DIR)/ocaml_compiled_interfaces
-OCAML_OBJECT_DIR  = $(BUILD_DIR)/ocaml_compiled_modules
-OCAML_LIBRARY_DIR = $(BUILD_DIR)/ocaml_libraries
+HEADER_DIR  = $(BUILD_DIR)/include
+LIBRARY_DIR = $(BUILD_DIR)/libraries
+OBJECT_DIR  = $(BUILD_DIR)/objects
 
 # =============================================================================
 #                                    RULES
@@ -43,17 +38,12 @@ define HLM_ADD_OCAML_MODULE
 $(2)_ML  := $(SOURCE_DIR)/$(1)/$(2).ml
 $(2)_MLI := $(SOURCE_DIR)/$(1)/$(2).mli
 
-$(2)_HEADER    := $(OCAML_HEADER_DIR)/$(2).mli
-$(2)_INTERFACE := $(OCAML_INCLUDE_DIR)/$(2).cmi
-$(2)_OBJECT    := $(OCAML_OBJECT_DIR)/$(2).cmx
+$(2)_INTERFACE := $(INCLUDE_DIR)/$(2).cmi
+$(2)_OBJECT    := $(OBJECT_DIR)/$(2).cmx
 
 .PHONY: $(2)
-$(2): $(2)-header    \
-      $(2)-interface \
+$(2): $(2)-interface \
       $(2)-object
-
-.PHONY: $(2)-header
-$(2)-header: $$($(2)_HEADER)
 
 .PHONY: $(2)-interface
 $(2)-interface: $$($(2)_INTERFACE)
@@ -61,25 +51,19 @@ $(2)-interface: $$($(2)_INTERFACE)
 .PHONY: $(2)-object
 $(2)-object: $$($(2)_OBJECT)
 
-$$($(2)_HEADER): $$($(2)_MLI)
-	@if [ ! -d "$(OCAML_HEADER_DIR)" ]; then mkdir -p $(OCAML_HEADER_DIR); fi
-	cp $$($(2)_MLI) $$($(2)_HEADER)
-
-$$($(2)_INTERFACE): $$($(2)_MLI)     \
-                    $$($(1)_HEADERS)
-	@if [ ! -d "$(OCAML_INCLUDE_DIR)" ]; then mkdir -p $(OCAML_INCLUDE_DIR); fi
-	ocamlopt -I $(OCAML_HEADER_DIR)  \
-	         -c $$($(2)_MLI)         \
-	         -opaque                 \
+$$($(2)_INTERFACE): $$($(2)_MLI)
+	@if [ ! -d "$(INCLUDE_DIR)" ]; then mkdir -p $(INCLUDE_DIR); fi
+	ocamlopt -c $$($(2)_MLI)        \
+	         -opaque                \
 	         -o $$($(2)_INTERFACE)
 
-$$($(2)_OBJECT): $$($(2)_ML)                 \
-                 $$($(2)_MLI)                \
+$$($(2)_OBJECT): $$($(2)_ML)        \
+                 $$($(2)_MLI)       \
                  $$($(2)_INTERFACE)
 	@if [ ! -d "$(OCAML_OBJECT_DIR)" ]; then mkdir -p $(OCAML_OBJECT_DIR); fi
-	ocamlopt -I $(OCAML_INCLUDE_DIR)        \
-	         -I $(OCAML_OBJECT_DIR)         \
-	         -c $$($(2)_ML)                 \
+	ocamlopt -I $(OCAML_INCLUDE_DIR) \
+	         -I $(OCAML_OBJECT_DIR)  \
+	         -c $$($(2)_ML)          \
 	         -o $$($(2)_OBJECT)
 
 endef
@@ -88,22 +72,14 @@ endef
 #
 define HLM_ADD_OCAML_PACKAGE
 
+$(1)_MODULES    := $(foreach MODULE,$(2),$(SOURCE_DIR)/$(1)/$(MODULE).ml)
+$(1)_INTERFACES := $(foreach MODULE,$(2),$(SOURCE_DIR)/$(1)/$(MODULE).mli)
+$(1)_ARCHIVE    := $(LIBRARY_DIR)/$(1).cmxa
 
-$(eval $(foreach MODULE,$(2),$(call HLM_ADD_OCAML_MODULE,$(1),$(MODULE))))
-
-$(1)_HEADERS    := $(foreach MODULE,$(2),$$($(MODULE)_HEADER))
-$(1)_INTERFACES := $(foreach MODULE,$(2),$$($(MODULE)_INTERFACE))
-$(1)_OBJECTS    := $(foreach MODULE,$(2),$$($(MODULE)_OBJECT))
-$(1)_ARCHIVE    := $(OCAML_LIBRARY_DIR)/$(1).cmxa
+$(1)_OBJECTS    := $(foreach MODULE,$(2),$(OBJECT_DIR)/$(MODULE).cmx)
 
 .PHONY: $(1)
-$(1): $(1)-headers    \
-      $(1)-interfaces \
-      $(1)-objects    \
-      $(1)-archive
-
-.PHONY: $(1)-headers
-$(1)-headers: $$($(1)_HEADERS)
+$(1): $(1)-archive
 
 .PHONY: $(1)-interfaces
 $(1)-interfaces: $$($(1)_INTERFACES)
@@ -114,9 +90,62 @@ $(1)-objects: $$($(1)_OBJECTS)
 .PHONY: $(1)-archive
 $(1)-archive: $$($(1)_ARCHIVE)
 
-$$($(1)_ARCHIVE): $$($(1)_OBJECTS)
-	@if [ ! -d "$(OCAML_LIBRARY_DIR)" ]; then mkdir -p $(OCAML_LIBRARY_DIR); fi
+$$($(1)_ARCHIVE): $$($(1)_MODULES)    \
+                  $$($(1)_INTERFACES)
+	@if [ ! -d "$(HEADER_DIR)" ]; then mkdir -p $(HEADER_DIR); fi
+	@if [ ! -d "$(OBJECT_DIR)" ]; then mkdir -p $(OBJECT_DIR); fi
+	@if [ ! -d "$(LIBRARY_DIR)" ]; then mkdir -p $(LIBRARY_DIR); fi
+	ocamlopt $(foreach MODULE,$(2),                            \
+	                       -c $(SOURCE_DIR)/$(1)/$(MODULE).mli)
+	ocamlopt -I $(HEADER_DIR)                                   \
+	         -c $(foreach MODULE,$(2),                          \
+	                          -o $(OBJECT_DIR)/$(MODULE).cmx    \
+	                             $(SOURCE_DIR)/$(1)/$(MODULE).ml)
 	ocamlopt -a -o $$($(1)_ARCHIVE) $$($(1)_OBJECTS)
+
+endef
+
+# HLM_OCAML_PACKAGE - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+
+define HLM_OCAML_MODULE
+
+$(HEADER_DIR)/$(2).cmi: src/$(1)/$(2).mli
+	@if [ ! -d "$(HEADER_DIR)"  ]; then mkdir -p $(HEADER_DIR);  fi
+	@if [ ! -d "$(OBJECT_DIR)"  ]; then mkdir -p $(OBJECT_DIR);  fi
+	ocamlopt -I $(HEADER_DIR) -c -o $(HEADER_DIR)/$(2).cmi src/$(1)/$(2).mli
+
+$(OBJECT_DIR)/$(2).cmx: src/$(1)/$(2).ml
+	@if [ ! -d "$(HEADER_DIR)"  ]; then mkdir -p $(HEADER_DIR);  fi
+	@if [ ! -d "$(OBJECT_DIR)"  ]; then mkdir -p $(OBJECT_DIR);  fi
+	ocamlopt -I $(HEADER_DIR) -I $(OBJECT_DIR) -c -o $(OBJECT_DIR)/$(2).cmx src/$(1)/$(2).ml
+
+endef
+
+define HLM_OCAML_PACKAGE
+
+$(1)_MEMBERS := $(strip $(shell cat src/$(1)/package/$(1).mem))
+
+$(1)_ARCHIVE    := $(LIBRARY_DIR)/$(1).cmxa
+$(1)_MODULES    := $$(foreach MODULE,$$($(1)_MEMBERS),src/$(1)/$$(MODULE).ml)
+$(1)_INTERFACES := $$(foreach MODULE,$$($(1)_MEMBERS),src/$(1)/$$(MODULE).mli)
+
+$(1)_COMPILED_INTERFACES := $$(foreach MODULE,$$($(1)_MEMBERS),$(HEADER_DIR)/$$(MODULE).cmi)
+$(1)_COMPILED_MODULES    := $$(foreach MODULE,$$($(1)_MEMBERS),$(OBJECT_DIR)/$$(MODULE).cmx)
+
+$$(eval $$(foreach MODULE,$$($(1)_MEMBERS),$$(call HLM_OCAML_MODULE,$(1),$$(MODULE))))
+
+.PHONY : $(1)
+$(1) : $(1)-archive
+
+.PHONY : $(1)-archive
+$(1)-archive : $$($(1)_ARCHIVE)
+
+.PHONY : $$($(1)_ARCHIVE)
+$$($(1)_ARCHIVE): $$($(1)_COMPILED_INTERFACES) $$($(1)_COMPILED_MODULES)
+	@if [ ! -d "$(HEADER_DIR)"  ]; then mkdir -p $(HEADER_DIR);  fi
+	@if [ ! -d "$(OBJECT_DIR)"  ]; then mkdir -p $(OBJECT_DIR);  fi
+	@if [ ! -d "$(LIBRARY_DIR)" ]; then mkdir -p $(LIBRARY_DIR); fi
 
 endef
 
@@ -126,8 +155,10 @@ endef
 #$(eval $(call HLM_ADD_OCAML_MODULE,mlco,mlco_expression))
 #$(eval $(call HLM_ADD_OCAML_MODULE,mlco,mlco_type))
 
-$(eval $(call HLM_ADD_OCAML_PACKAGE,mlco,mlco_expression \
-                                         mlco_type      ))
+#$(eval $(call HLM_ADD_OCAML_PACKAGE,mlco,mlco_expression \
+#                                         mlco_type      ))
+
+$(eval $(call HLM_OCAML_PACKAGE,mlco))
 
 # Packages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # The following packages shall be listed in dependency order, where packages

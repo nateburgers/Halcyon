@@ -1,5 +1,7 @@
 (** mlco_expression.ml *)
 
+module Type = Mlco_type
+
 module rec Expression_type : sig
     type t = Variable    of string
            | Integer     of int
@@ -52,22 +54,22 @@ end = struct
     }
 end
 
-open Expression_type
+type t = Expression_type.t
 
 module Abstraction = struct
-    include Abstraction_type
-
+    open Abstraction_type
+    type t = Abstraction_type.t
     type expression = Expression_type.t
 
     let make ~parameter ~body = { parameter ; body }
 end
 
 module Application = struct
-    include Application_type
+    type t = Application_type.t
 end
 
 module Let = struct
-    include Let_type
+    type t = Let_type.t
 end
 
 (* ----------------------------------------------------------------------------

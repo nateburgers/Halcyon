@@ -1,26 +1,25 @@
 (** mlco_type.ml *)
 
-module rec Type : sig
+module rec Type_type : sig
     type t = Integer
            | Function of Function_type.t
-end = struct
-    type t = Integer
-           | Function of Function_type.t
-end
+end = Type_type
 
 and Function_type : sig
     type t = {
-        domain   : Type.t ;
-        codomain : Type.t ;
+        domain   : Type_type.t ;
+        codomain : Type_type.t ;
     }
-end = struct
-    type t = {
-        domain   : Type.t ;
-        codomain : Type.t ;
-    }
-end
+end = Function_type
 
-open Type
+open Type_type
+
+module Function = struct
+    include Function_type
+    type ty = Type_type.t
+
+    let make ~domain ~codomain = { domain; codomain }
+end
 
 (* ----------------------------------------------------------------------------
  * MIT License

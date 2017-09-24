@@ -6,7 +6,8 @@
 module rec Expression_type : sig
     (**
      * This module provides the type for expressions in the core language.
-     * *)
+     *
+     *)
 
     type t = Variable    of string
            | Integer     of int
@@ -42,22 +43,21 @@ and Let_type : sig
     }
 end
 
-open Expression_type
+type t = Expression_type.t
 
 module Abstraction : sig
-    open Abstraction_type
-
+    type t = Abstraction_type.t
     type expression = Expression_type.t
 
     val make : parameter:string -> body:expression -> t
 end
 
 module Application : sig
-    open Application_type
+    type t = Application_type.t
 end
 
 module Let : sig
-    open Let_type
+    type t = Let_type.t
 end
 
 (* ----------------------------------------------------------------------------
