@@ -1,21 +1,8 @@
 (** mls_avltree.mli *)
 
+module      Int        = Mls_int
+module      Optional   = Mls_optional
 module type Comparable = Mls_comparable.Signature
-
-module Optional : sig
-    type 'value t = Value of 'value
-                  | Nothing
-
-    val nothing : unit -> 'value t
-
-    val make : 'value -> 'value t
-end
-
-module Int : sig
-    type t = int
-
-    val greater : t -> t -> t
-end
 
 module Make (Key : Comparable) : sig
 

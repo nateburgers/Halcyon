@@ -1,24 +1,8 @@
 (** mls_avltree.ml *)
 
+module      Int        = Mls_int
+module      Optional   = Mls_optional
 module type Comparable = Mls_comparable.Signature
-
-module Optional = struct
-    type 'value t = Value of 'value
-                  | Nothing
-
-    let nothing () =
-        Nothing
-
-    let make value =
-        Value value
-end
-
-module Int = struct
-    type t = int
-
-    let greater lhs rhs =
-        if lhs > rhs then lhs else rhs
-end
 
 module Make (Key : Comparable) = struct
 
