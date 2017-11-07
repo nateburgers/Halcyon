@@ -32,6 +32,34 @@ module Make (Key : Comparable) = struct
         }
     end = Leaf_type
 
+    module Tree = struct
+        type 'value t = 'value Tree_type.t
+                      = Branch of 'value Branch_type.t
+                      | Leaf   of 'value Leaf_type.t
+                      | Empty
+    end
+
+    module Branch = struct
+        type 'value t = 'value Branch_type.t
+
+        open Branch_type
+
+        let height      branch = branch.height
+        let key         branch = branch.key
+        let value       branch = branch.value
+        let left_child  branch = branch.left_child
+        let right_child branch = branch.right_child
+    end
+
+    module Leaf = struct
+        type 'value t = 'value Leaf_type.t
+
+        open Leaf_type
+
+        let key   leaf = leaf.key
+        let value leaf = leaf.value
+    end
+
     (* TYPES *)
     type  key          =  Key.t
     type 'value branch = 'value Branch_type.t
@@ -39,12 +67,14 @@ module Make (Key : Comparable) = struct
     type 'value t      = 'value Tree_type.t
 
     (* FUNCTIONS *)
+    (* TODO(nate): add infix function operators to remove some of this
+     *             grouping.
+     *)
     let key tree =
-        let open Tree_type in
         begin match tree with
-        | Branch { key } -> Optional.make key
-        | Leaf   { key } -> Optional.make key
-        | Empty          -> Optional.nothing ()
+        | Tree.Branch branch -> Optional.make (Branch.key branch)
+        | Tree.Leaf   leaf   -> Optional.make (Leaf.key leaf)
+        | Tree.Empty         -> Optional.nothing ()
         end
 
     let value tree =

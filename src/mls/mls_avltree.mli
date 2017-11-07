@@ -32,11 +32,35 @@ module Make (Key : Comparable) : sig
         }
     end
 
+    module Tree : sig
+        type 'value t = 'value Tree_type.t
+                      = Branch of 'value Branch_type.t
+                      | Leaf   of 'value Leaf_type.t
+                      | Empty
+    end
+
+    module Branch : sig
+        type 'value t = 'value Branch_type.t
+
+        val height      : 'value t ->  int
+        val key         : 'value t ->  Key.t
+        val value       : 'value t -> 'value
+        val left_child  : 'value t -> 'value Tree.t
+        val right_child : 'value t -> 'value Tree.t
+    end
+
+    module Leaf : sig
+        type 'value t = 'value Leaf_type.t
+
+        val key   : 'value t -> Key.t
+        val value : 'value t -> 'value
+    end
+
     (* TYPES *)
     type  key          =  Key.t
-    type 'value branch = 'value Branch_type.t
-    type 'value leaf   = 'value Leaf_type.t
-    type 'value t      = 'value Tree_type.t
+    type 'value branch = 'value Branch.t
+    type 'value leaf   = 'value Leaf.t
+    type 'value t      = 'value Tree.t
 
     (* FUNCTIONS *)
     val empty : unit -> 'value t ;;
