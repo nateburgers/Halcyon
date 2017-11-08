@@ -11,7 +11,6 @@ module Make (Key : Comparable) = struct
 
     module rec Tree_type : sig
         type 'value t = Branch of 'value Branch_type.t
-                      | Leaf   of 'value Leaf_type.t
                       | Empty
     end = Tree_type
 
@@ -25,24 +24,31 @@ module Make (Key : Comparable) = struct
         }
     end = Branch_type
 
-    and Leaf_type : sig
-        type 'value t = {
-            key   :  Key.t ;
-            value : 'value ;
-        }
-    end = Leaf_type
-
     module Tree = struct
         type 'value t = 'value Tree_type.t
                       = Branch of 'value Branch_type.t
-                      | Leaf   of 'value Leaf_type.t
                       | Empty
+
+        let make_branch branch = Branch branch
+        let make_empty  ()     = Empty
     end
 
     module Branch = struct
-        type 'value t = 'value Branch_type.t
+        type 'value t = 'value Branch_type.t = {
+            height      :  int               ;
+            key         :  Key.t             ;
+            value       : 'value             ;
+            left_child  : 'value Tree_type.t ;
+            right_child : 'value Tree_type.t ;
+        }
 
-        open Branch_type
+        let make ~key ~value ?(left_child  = Tree_type.Empty)
+                             ?(right_child = Tree_type.Empty) =
+            let left_child_height  = height left_child in
+            let right_child_height = height right_child in
+            let height = 1 + (Int.greater left_child_height
+                                          right_child_height) in
+            { height; key; value; left_child; right_child }
 
         let height      branch = branch.height
         let key         branch = branch.key
@@ -51,55 +57,37 @@ module Make (Key : Comparable) = struct
         let right_child branch = branch.right_child
     end
 
-    module Leaf = struct
-        type 'value t = 'value Leaf_type.t
-
-        open Leaf_type
-
-        let key   leaf = leaf.key
-        let value leaf = leaf.value
-    end
-
     (* TYPES *)
     type  key          =  Key.t
     type 'value branch = 'value Branch_type.t
-    type 'value leaf   = 'value Leaf_type.t
     type 'value t      = 'value Tree_type.t
 
     (* FUNCTIONS *)
-    (* TODO(nate): add infix function operators to remove some of this
-     *             grouping.
-     *)
     let key tree =
         begin match tree with
-        | Tree.Branch branch -> Optional.make (Branch.key branch)
-        | Tree.Leaf   leaf   -> Optional.make (Leaf.key leaf)
+        | Tree.Branch branch -> Optional.make @@ Branch.key branch
         | Tree.Empty         -> Optional.nothing ()
         end
 
     let value tree =
-        let open Tree_type in
         begin match tree with
-        | Branch { value } -> Optional.make value
-        | Leaf   { value } -> Optional.make value
-        | Empty            -> Optional.nothing ()
+        | Tree.Branch branch -> Optional.make @@ Branch.value branch
+        | Tree.Empty         -> Optional.nothing ()
         end
 
     let height tree =
-        let open Tree_type in
         begin match tree with
-        | Branch branch -> branch.height
-        | Leaf   _      -> 1
-        | Empty         -> 0
+        | Tree.Branch branch -> Branch.height branch
+        | Tree.Empty         -> 0
         end
 
     let balance tree =
-        let open Tree_type in
         begin match tree with
-        | Branch { left_child ; right_child } ->
-                (height right_child) - (height left_child)
-        | Leaf  _ -> 0
-        | Empty _ -> 0
+        | Tree.Branch branch ->
+                let left_height  = height @@ Branch.left_child  branch in
+                let right_height = height @@ Branch.right_child branch in
+                right_height - left_height
+        | Tree.Empty         -> 0
         end
 
     let is_avl tree =
@@ -111,74 +99,41 @@ module Make (Key : Comparable) = struct
     let is_right_heavy tree = (balance tree) > 0
 
     let empty () =
-        Tree_type.Empty
+        Tree.Empty
 
-    let make_leaf ~key ~value =
-        let open Tree_type in
-        let open Leaf_type in Leaf { key ; value }
-
-    let make_branch ~key ~value ~left_child ~right_child =
-        let left_child_height  = height left_child in
-        let right_child_height = height right_child in
-        let node_height        = 1 + Int.greater left_child_height
-                                                 right_child_height in
-        let open Branch_type in Tree_type.Branch {
-            height = node_height; key; value; left_child; right_child
-        }
-
-    let make ~key ~value ?(left_child  = Optional.Nothing)
-                         ?(right_child = Optional.Nothing) =
-        begin match (left_child, right_child) with
-        | (Optional.Nothing, Optional.Nothing) ->
-                make_leaf ~key:key ~value:value
-        | (Optional.Nothing, Optional.Value right) ->
-                make_branch ~key:key
-                            ~value:value
-                            ~left_child:Tree_type.Empty
-                            ~right_child:right
-        | (Optional.Value left, Optional.Nothing) ->
-                make_branch ~key:key
-                            ~value:value
-                            ~left_child:left
-                            ~right_child:Tree_type.Empty
-        | (Optional.Value left, Optional.Value right) ->
-                make_branch ~key:key
-                            ~value:value
-                            ~left_child:left
-                            ~right_child:right
-        end
+    let make ~key ~value ?(left_child  = Tree.Empty)
+                         ?(right_child = Tree.Empty) =
+        Tree.make_branch @@ Branch.make ~key:key
+                                        ~value:value
+                                        ~left_child:left_child
+                                        ~right_child:right_child
 
     let left_child tree =
-        let open Tree_type in
         begin match tree with
-        | Branch { left_child } -> left_child
-        | Leaf     _            -> Empty
-        | Empty                 -> Empty
+        | Tree.Branch branch -> Branch.left_child branch
+        | _                  -> Tree.Empty
         end
 
     let right_child tree =
-        let open Tree_type in
         begin match tree with
-        | Branch { right_child } -> right_child
-        | Leaf     _             -> Empty
-        | Empty                  -> Empty
+        | Tree.Branch branch -> Branch.right_child branch
+        | _                  -> Tree.Empty
         end
 
     let rotate_left tree =
-        let open Tree_type in
         begin match tree with
-        | Branch {
-            key; value; left_child;
-            right_child = Branch {
-                            key         = right_key         ;
-                            value       = right_value       ;
-                            left_child  = right_left_child  ;
-                            right_child = right_right_child ;
+        | Tree.Branch {
+            Branch.key; Branch.value; Branch.left_child;
+            Branch.right_child = Tree.Branch {
+                            Branch.key         = right_key         ;
+                            Branch.value       = right_value       ;
+                            Branch.left_child  = right_left_child  ;
+                            Branch.right_child = right_right_child ;
                           }
-          } -> begin make_branch
+          } -> begin make
                    ~key:right_key
                    ~value:right_value
-                   ~left_child:begin make_branch
+                   ~left_child:begin make
                                    ~key:key
                                    ~value:value
                                    ~left_child:left_child
@@ -186,62 +141,27 @@ module Make (Key : Comparable) = struct
                                end
                    ~right_child:right_right_child
                end
-        | Branch {
-            key; value; left_child;
-            right_child = Leaf {
-                            key   = right_key   ;
-                            value = right_value ;
-                          }
-          } -> begin make_branch
-                   ~key:right_key
-                   ~value:right_value
-                   ~left_child:begin make_branch
-                                   ~key:key
-                                   ~value:value
-                                   ~left_child:left_child
-                                   ~right_child:Empty
-                               end
-                   ~right_child:Empty
-               end
         | other -> other
         end
 
     let rotate_right tree =
-        let open Tree_type in
         begin match tree with
-        | Branch {
-            key; value; right_child;
-            left_child = Branch {
-                           key         = left_key         ;
-                           value       = left_value       ;
-                           left_child  = left_left_child  ;
-                           right_child = left_right_child ;
+        | Tree.Branch {
+            Branch.key; Branch.value; Branch.right_child;
+            Branch.left_child = Branch {
+                           Branch.key         = left_key         ;
+                           Branch.value       = left_value       ;
+                           Branch.left_child  = left_left_child  ;
+                           Branch.right_child = left_right_child ;
                          }
-          } -> begin make_branch
+          } -> begin make
                    ~key:left_key
                    ~value:left_value
                    ~left_child:left_left_child
-                   ~right_child:begin make_branch
+                   ~right_child:begin make
                                     ~key:key
                                     ~value:value
                                     ~left_child:left_right_child
-                                    ~right_child:right_child
-                                end
-               end
-        | Branch {
-            key; value; right_child;
-            left_child = Leaf {
-                           key   = left_key   ;
-                           value = left_value ;
-                         }
-          } -> begin make_branch
-                   ~key:left_key
-                   ~value:left_value
-                   ~left_child:Empty
-                   ~right_child:begin make_branch
-                                    ~key:key
-                                    ~value:value
-                                    ~left_child:Empty
                                     ~right_child:right_child
                                 end
                end
@@ -249,29 +169,25 @@ module Make (Key : Comparable) = struct
         end
 
     let rotate_left_right tree =
-        let open Tree_type in
         begin match tree with
-        | Branch { key; value; left_child; right_child } ->
-                rotate_left begin make_branch
-                                ~key:key
-                                ~value:value
-                                ~left_child:left_child
-                                ~right_child:(rotate_right right_child)
-                            end
-        | other -> other
+        | Tree.Branch branch ->
+              make ~key:Branch.key branch
+                   ~value:Branch.value branch
+                   ~left_child:Branch.left_child branch
+                   ~right_child:(rotate_right @@ Branch.right_child branch)
+              |> rotate_left
+        | Empty -> Empty
         end
 
     let rotate_right_left tree =
-        let open Tree_type in
         begin match tree with
-        | Branch { key; value; left_child; right_child } ->
-                rotate_right begin make_branch
-                                ~key:key
-                                ~value:value
-                                ~left_child:(rotate_left left_child)
-                                ~right_child:right_child
-                             end
-        | other -> other
+        | Tree.Branch branch ->
+              make ~key:Branch.key branch
+                   ~value:Branch.value branch
+                   ~left_child:(rotate_left @@ Branch.left_child branch)
+                   ~right_child:Branch.right_child branch
+              |> rotate_right
+        | Empty -> Empty
         end
 
     let rec rebalance tree =
