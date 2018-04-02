@@ -130,7 +130,9 @@ docs: $(hlcc_SOURCE_HEADERS) \
 # Project - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .DEFAULT_GOAL := all
 .PHONY: all
-all: mls
+all:
+~ ${CPP_COMPILER} ${CPP_COMPILER_FLAGS} src/hlcc/hlcc.cc -o hlcc
+~ ./hlcc
 
 .PHONY: archives
 archives: hlcc-archive \
