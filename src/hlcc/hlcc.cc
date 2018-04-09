@@ -329,6 +329,13 @@ struct Expression
 ///   ExpressionTail' = @AddOperator Expression'
 ///                   | <empty>
 ///
+/// "Catamorphic" Left Factored Grammar
+///
+///   Expression'(a) = @Natural ExpressionTail'(a)
+///
+///   ExpressionTail'(a) = @AddOperator a
+///                      | <empty>
+///
 /// Along with the transform
 ///
 ///   T : Expression' -> Expression
@@ -345,6 +352,35 @@ auto parse(const std::deque<std::string>& tokens) -> Expression
     using Stack = std::deque<Values>;
 
     Stack stack;
+
+  expression:
+          // TODO(nate): add support for a parenthetical expression
+    if (tokens.front() == "(") {
+        goto reject;
+    }
+    if (tokens.front() == ")") {
+        goto reject;
+    }
+    if (tokens.front() == "+") {
+        goto reject;
+    }
+    else /* token is a digit */ {
+        int digit = std::stoi(tokens.front());
+        stack.emplace_back(NaturalExpression(digit));
+
+        tokens.pop_front();
+        goto expressionTail;
+    }
+
+  expressionTail:
+    if (tokens.front() == "(") {
+    }
+    if (tokens.front() == ")") {
+    }
+    if (tokens.front() == "+") {
+    }
+    else /* token is a digit */ {
+    }
 
   reject:
 
