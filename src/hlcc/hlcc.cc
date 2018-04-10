@@ -324,9 +324,12 @@ struct Expression
 ///
 /// Left Factored Grammar
 ///
+///                 state 0  state 1
 ///   Expression' = @Natural ExpressionTail'
 ///
+///                     state 0      state 1
 ///   ExpressionTail' = @AddOperator Expression'
+///                     state 2
 ///                   | <empty>
 ///
 /// "Catamorphic" Left Factored Grammar
@@ -345,6 +348,8 @@ struct Expression
 ///   T n (@AddOperator, e) = AddExpression (NaturalExpression n, e)
 ///   T n (<empty>)         = NaturalExpression n
 ///
+
+auto parseExpression(std::deque<std::string> *tokens) ->
 
 auto parse(const std::deque<std::string>& tokens) -> Expression
 {
