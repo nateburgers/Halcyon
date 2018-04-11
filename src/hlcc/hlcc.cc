@@ -317,80 +317,39 @@ struct Expression
     Data d_data;
 };
 
+
 /// Source Grammar
 ///
 ///   Expression = @Natural                            <NaturalExpression>
 ///              | Expression @AddOperator Expression  <AddExpression>
 ///
+/// Haskell-y F-algebra of Grammar w/ semantic actions
+///
+///   Expression self = @Natural                   -> { a     -> e }
+///                   | self . @AddOperator . self -> { s b s -> e }
+///
 /// Left Factored Grammar
 ///
-///                 state 0  state 1
 ///   Expression' = @Natural ExpressionTail'
 ///
-///                     state 0      state 1
 ///   ExpressionTail' = @AddOperator Expression'
-///                     state 2
 ///                   | <empty>
 ///
-/// "Catamorphic" Left Factored Grammar
+/// Empty-Eliminated Left Factored Grammar
 ///
-///   Expression'(a) = @Natural ExpressionTail'(a)
+///   Expression'' = @Natural
+///                | @Natural ExpressionTail''
 ///
-///   ExpressionTail'(a) = @AddOperator a
-///                      | <empty>
+///   ExpressionTail'' = @AddOperator Expression''
 ///
-/// Along with the transform
+/// Lookahead-Expanded Empty-Eliminated Left Factored Grammar
 ///
-///   T : Expression' -> Expression
-///   T e = T (e[0],  e[1])
-///
-///   T : @Natural * ExpressionTail' -> Expression
-///   T n (@AddOperator, e) = AddExpression (NaturalExpression n, e)
-///   T n (<empty>)         = NaturalExpression n
+///   Expression''' = @Natural
+///                 | @Natural @AddOperator Expression'''
 ///
 
-auto parseExpression(std::deque<std::string> *tokens) ->
-
-auto parse(const std::deque<std::string>& tokens) -> Expression
+auto parse(std::deque<std::string>&& tokens) -> Expression
 {
-    using Values = std::variant<AddExpression, NaturalExpression, Expression>;
-    using Stack = std::deque<Values>;
-
-    Stack stack;
-
-  expression:
-          // TODO(nate): add support for a parenthetical expression
-    if (tokens.front() == "(") {
-        goto reject;
-    }
-    if (tokens.front() == ")") {
-        goto reject;
-    }
-    if (tokens.front() == "+") {
-        goto reject;
-    }
-    else /* token is a digit */ {
-        int digit = std::stoi(tokens.front());
-        stack.emplace_back(NaturalExpression(digit));
-
-        tokens.pop_front();
-        goto expressionTail;
-    }
-
-  expressionTail:
-    if (tokens.front() == "(") {
-    }
-    if (tokens.front() == ")") {
-    }
-    if (tokens.front() == "+") {
-    }
-    else /* token is a digit */ {
-    }
-
-  reject:
-
-  accept:
-    return stack.top();
 }
 
 auto main() -> int
